@@ -25,7 +25,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--flush",
             type=bool,
-            default=False,
+            default=True,
             help="Flush the database before adding new files",
         )
         
@@ -72,10 +72,10 @@ class Command(BaseCommand):
                 self.iter_caibao_files(directory, pattern),
                 total=total_files,
             ),
-            kwargs['batch-size'],
+            kwargs['batch_size'],
         ):
 
-            with concurrent.futures.ProcessPoolExecutor(max_workers=kwargs['max-workers']) as executor:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=kwargs['max_workers']) as executor:
                 futures = {
                     executor.submit(process_file, file_path): file_path
                     for file_path in file_paths
@@ -94,13 +94,13 @@ class Command(BaseCommand):
 def get_or_create_company(file_path):
     # TODO: adjust for folder pattern
     company_str = file_path.split("/")[-2]
-    company_name, code = company_str.split("_")
+    code, company_name = company_str.split("_")
     return Company.objects.get_or_create(name=company_name, code=code)
 
 def process_file(file_path):
     try:
         file_hasher = FileHash("sha256")
-        company = get_or_create_company(file_path)
+        company,_ = get_or_create_company(file_path)
         hash_digest = file_hasher.hash_file(file_path)
         CaibaoFile(file_path=file_path, hash_digest=hash_digest, company=company).save()
     except Exception as e:

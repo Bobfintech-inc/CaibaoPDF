@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-hk)5csk@y4*nf2lwyev%&jrk7madef2l0mxcc5c1lol72fzio1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -150,7 +150,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')  # Path where static files will be collected
-CAIBAO_ROOT = os.path.join(STATIC_ROOT, 'caibao_files')  # Path where financial reports will be stored
+CAIBAO_ROOT = os.path.join(MEDIA_ROOT, 'caibao_files')  # Path where financial reports will be stored
 
 
 LOGGING = {

@@ -1,8 +1,11 @@
 # admin.py
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Task
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from .models import Company, CaibaoFile
+
+
 
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'priority', 'created_at', 'updated_at')
@@ -10,44 +13,26 @@ class CompanyAdmin(admin.ModelAdmin):
     list_filter = ('priority',)
     ordering = ('-priority',)
 
+# CaibaoFile admin setup with downloadable link for file_path
 class CaibaoFileAdmin(admin.ModelAdmin):
-    list_display = ('file_path', 'hash_digest', 'company', 'priority', 'created_at', 'updated_at')
+    list_display = ('file_path', 'file_link', 'hash_digest', 'company', 'priority', 'created_at', 'updated_at')
     search_fields = ('file_path', 'hash_digest')
     list_filter = ('priority', 'company')
     ordering = ('-priority',)
 
-
-# Registering the models with their respective admin classes
-admin.site.register(Company, CompanyAdmin)
-admin.site.register(CaibaoFile, CaibaoFileAdmin)
-
-class TaskAdmin(admin.ModelAdmin):
-    # Fields to be displayed in the list view
-    list_display = (
-        "task_id",
-        "status",
-        "message",
-        "biz_type",
-        "file_name",
-        "updated_at",
-    )
-
-    # Fields that can be used for searching in the admin panel
-    search_fields = ("task_id", "status", "biz_type")
-
-    # Add filters for filtering tasks by status and biz_type
-    list_filter = ("status", "biz_type")
-
-    # Make file field clickable for easy file download
+    # Create a clickable download link for file_path
     def file_link(self, obj):
-        if obj.file:
-            return f'<a href="{obj.file.url}">Download</a>'
+        if obj.file_path:
+            # Assuming file_path is a valid URL or path to the file
+            # prefix '/' for file_path
+            return format_html('<a href="/{}" download>Download</a>', obj.file_path)
         return "No file"
 
     file_link.allow_tags = True
     file_link.short_description = "File"
 
-    # Optionally, make `file_link` a part of `list_display`
+# Task admin setup with downloadable link for file (assuming Task has a file field)
+class TaskAdmin(admin.ModelAdmin):
     list_display = (
         "task_id",
         "status",
@@ -55,12 +40,28 @@ class TaskAdmin(admin.ModelAdmin):
         "biz_type",
         "file_name",
         "updated_at",
-        "file_link",
+        "file_link",  # Add the downloadable link to list_display
     )
 
+    search_fields = ("task_id", "status", "biz_type")
+    list_filter = ("status", "biz_type")
 
-# Register the model and its admin configuration
+    # Create a clickable download link for the file field
+    def file_link(self, obj):
+        if obj.file:
+            # Assuming the file is accessible via the URL field of the FileField
+            # No preceding '/' for file.url
+            return format_html('<a href="{}" download>Download</a>', obj.file.url)
+        return "No file"
+
+    file_link.allow_tags = True
+    file_link.short_description = "File"
+
+
+admin.site.register(Company, CompanyAdmin)
+admin.site.register(CaibaoFile, CaibaoFileAdmin)
 admin.site.register(Task, TaskAdmin)
+
 
 
 # Create the interval schedule for 1.5 minutes (90 seconds)
