@@ -4,7 +4,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Task
 from .serializers import TaskStatusUpdateSerializer
+import logging
 
+logger = logging.getLogger(__name__)
 
 class TaskStatusUpdateView(APIView):
     def post(self, request, *args, **kwargs):
@@ -13,6 +15,7 @@ class TaskStatusUpdateView(APIView):
         if serializer.is_valid():
             # Check if it's a success callback with a file
             task_data = serializer.validated_data
+            logger.info(f"validated_data + {serializer.validated_data}")
             task_id = task_data["task_id"]
             task, created = Task.objects.update_or_create(
                 task_id=task_id, defaults=task_data

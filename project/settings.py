@@ -118,7 +118,7 @@ USE_I18N = True
 USE_TZ = True
 
 
-SITE_DOMAIN = '127.0.0.1'
+SITE_DOMAIN = os.environ['SITE_DOMAIN']
 
 
 # Static files (CSS, JavaScript, Images)

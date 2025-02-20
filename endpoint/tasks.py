@@ -44,7 +44,7 @@ def get_files_to_submit():
 def get_caibao_files(limit=10) -> Generator[CaibaoFile, None, None]:
     # Step 1: Identify the company with the higher priority and code
     highest_priority_company = (
-        Company.objects.all().order_by("-max_priority").order_by("+code").first()
+        Company.objects.all().order_by("code").first()
     )
 
     if highest_priority_company is None:
@@ -52,7 +52,7 @@ def get_caibao_files(limit=10) -> Generator[CaibaoFile, None, None]:
 
     # Step 2: Retrieve CaibaoFile records for this company where the related Task is null
     caibao_files = CaibaoFile.objects.filter(
-        company=highest_priority_company, task__isnull=True
+        company=highest_priority_company, tasks__isnull=True
     ).order_by("created_at")[:limit]
 
     # Step 3: Yield each CaibaoFile record
@@ -71,6 +71,7 @@ def submit_ocr_task(limit=10):
     url = os.environ.get("OCR_API_URL")
     for caibao_file in get_caibao_files(limit):
         
+        
         params = {"testId": caibao_file.hash_digest, "callback": get_call_back_url()}
         files = {
             "file": (
@@ -78,14 +79,14 @@ def submit_ocr_task(limit=10):
                 open(caibao_file.file_path, "rb"),
             ),
         }
-
+        logger.info(f'{caibao_file.file_path} submit, payload {params}')
         try:
             response = requests.post(url, params=params, files=files)
             response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
             data = response.json()
             logger.info(data)
             task, created = Task.objects.update_or_create(
-                task_id=data["taskId"],
+                task_id=caibao_file.hash_digest,
                 source_file=caibao_file,
                 defaults={
                     "status": data["status"],
