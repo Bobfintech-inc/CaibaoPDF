@@ -1,0 +1,32 @@
+{
+  // 使用 IntelliSense 了解相关属性。
+  // 悬停以查看现有属性的描述。
+  // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": ["-A", "project", "worker", "--loglevel=info"],
+    },
+    {
+        "name": "Beat",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "celery",
+        "args": ["-A", "project", "beat", "--loglevel=info"],
+    },
+    {
+      "name": "Server",
+      "type": "debugpy",
+      "request": "launch",
+      "args": ["runserver"],
+      "justMyCode": false,
+      "django": true,
+      "autoStartBrowser": false,
+      "program": "${workspaceFolder}/manage.py"
+    }
+  ]
+}
