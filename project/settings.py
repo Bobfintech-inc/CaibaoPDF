@@ -38,11 +38,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "endpoint",
-    "rest_framework",
     'django_celery_beat',
     'django_celery_results',
-    
+    "rest_framework",
+    "endpoint",
 ]
 
 MIDDLEWARE = [
@@ -83,6 +82,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        'OPTIONS': {
+            'timeout': 60,  # Timeout value in seconds
+        },
     }
 }
 
@@ -118,6 +120,8 @@ USE_I18N = True
 USE_TZ = True
 
 
+if 'SITE_DOMAIN' not in os.environ:
+    raise ValueError('SITE_DOMAIN environment variable not set')
 SITE_DOMAIN = os.environ['SITE_DOMAIN']
 
 
@@ -140,6 +144,8 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# beat_schedule_filename
+# beat_schedule_filename = f"{BASE_DIR}/beat_schedule.sqlite3"
 
 
 # MEDIA SETTINGS
@@ -153,20 +159,61 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')  # Path where static files will b
 CAIBAO_ROOT = os.path.join(MEDIA_ROOT, 'caibao_files')  # Path where financial reports will be stored
 
 
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'django.log',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
-        'celery': {
+        # Root logger
+        '': {
+            'handlers': ['console', 'file'],
             'level': 'INFO',
-            'handlers': ['console'],
             'propagate': True,
         },
+        # Django framework logger
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery': {  # Assuming 'myproject' is your project name
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # Your account app specific logger, using the module path pattern
+        'endpoint': {  # Assuming 'myproject' is your project name
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'requests':{
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        }
     },
 }

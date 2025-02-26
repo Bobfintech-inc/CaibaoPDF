@@ -1,4 +1,5 @@
 from typing import Iterable, List
+from datetime import datetime
 
 def batch_data(data: Iterable, batch_size: int) -> Iterable[List]:
     """
@@ -20,3 +21,7 @@ def batch_data(data: Iterable, batch_size: int) -> Iterable[List]:
     # Yield the last batch if there's any leftover data
     if batch:
         yield batch
+
+
+def get_task_id(file_hash):
+    return f"{file_hash}_{datetime.now().isoformat(timespec='milliseconds') }"

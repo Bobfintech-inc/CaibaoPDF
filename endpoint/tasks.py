@@ -11,6 +11,8 @@ from .models import Task, Company, CaibaoFile
 from django.conf import settings
 from django.db.models import Max
 import logging
+
+from utils.utils import get_task_id
 logger = logging.getLogger(__name__)
 
 
@@ -65,38 +67,61 @@ def get_call_back_url():
     return f"http://{settings.SITE_DOMAIN}{callback_url}"
 
 
+def is_enough_tasks_running(limit):
+    return Task.objects.filter(status='running').count() >= limit
+
+
 @shared_task
 def submit_ocr_task(limit=10):
-
-    url = os.environ.get("OCR_API_URL")
+    
+    task_cap = 3
+    if is_enough_tasks_running(task_cap):
+        logger.info(f'{task_cap} tasks already running')
+        return
+    
+    url = os.environ.get("OCR_API_URL").strip()
+    tasks_created = []
     for caibao_file in get_caibao_files(limit):
-        
-        
-        params = {"testId": caibao_file.hash_digest, "callback": get_call_back_url()}
-        files = {
-            "file": (
-                os.sep.join(caibao_file.file_path.split(os.sep)[-2:]),
-                open(caibao_file.file_path, "rb"),
-            ),
-        }
-        logger.info(f'{caibao_file.file_path} submit, payload {params}')
         try:
+            task_id = get_task_id()
+            params = {"testId": task_id, "callback": get_call_back_url(), "async": True, "outformat": "md"}
+            files = {
+                "file": (
+                    os.sep.join(caibao_file.file_path.split(os.sep)[-2:]),
+                    open(caibao_file.file_path, "rb"),
+                ),
+            }
+            logger.info(f'{caibao_file.file_path} submit, payload {params}')
+
             response = requests.post(url, params=params, files=files)
             response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
             data = response.json()
             logger.info(data)
-            task, created = Task.objects.update_or_create(
-                task_id=caibao_file.hash_digest,
-                source_file=caibao_file,
-                defaults={
-                    "status": data["status"],
-                    "message": data.get("message", ""),
-                    "biz_type": data.get("bizType", ""),
-                    "file_name": data.get("fileName", ""),
-                },
-            )
+            match data['status']:
+                case 'create' | 'waitting' | 'running' | 'success' | 'existed':
+                    task, created = Task.objects.update_or_create(
+                        task_id=task_id,
+                        source_file=caibao_file,
+                        defaults={
+                            "status": data["status"],
+                            "message": data.get("message", ""),
+                            "biz_type": data.get("bizType", ""),
+                            "file_name": data.get("fileName", ""),
+                        },
+                    )
+                    tasks_created.append(task)
+                    logger.info(f'task {task} ' + ('created' if created else 'updated'))
+                case 'full':
+                    logger.warning(data)
+                    break
+                case 'error':
+                    logger.error(data)
+                    break
+
 
         except HTTPError as e:
             logger.exception(e)
         except (RequestException, ConnectionError, Timeout, TooManyRedirects) as e:
             logger.exception(e)
+
+    logger.info(f'submit ocr task existing, {len(tasks_created)} tasks created')
