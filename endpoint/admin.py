@@ -40,6 +40,7 @@ class TaskAdmin(admin.ModelAdmin):
         "biz_type",
         "file_name",
         "updated_at",
+        "source_file",
         "file_link",  # Add the downloadable link to list_display
     )
 
@@ -64,12 +65,16 @@ admin.site.register(Task, TaskAdmin)
 
 
 
+# clear IntervalSchedule table 
+IntervalSchedule.objects.all().delete()
 # Create the interval schedule for 1.5 minutes (90 seconds)
 schedule, created = IntervalSchedule.objects.get_or_create(
     every=90,  # Interval in seconds (90 seconds = 1.5 minutes)
     period=IntervalSchedule.SECONDS,
 )
 
+# clear PeriodicTask table
+PeriodicTask.objects.all().delete()
 # Create a periodic task that will execute the `update_task_status` task
 PeriodicTask.objects.get_or_create(
     interval=schedule,

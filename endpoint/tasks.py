@@ -7,7 +7,7 @@ from celery import shared_task
 import requests
 from requests.exceptions import RequestException, HTTPError, ConnectionError, Timeout, TooManyRedirects
 
-from .models import Task, Company, CaibaoFile
+from .models import Task, Company, CaibaoFile, TaskStatus
 from django.conf import settings
 from django.db.models import Max
 import logging
@@ -103,7 +103,7 @@ def submit_ocr_task(limit=10):
                         task_id=task_id,
                         source_file=caibao_file,
                         defaults={
-                            "status": data["status"],
+                            "status": TaskStatus.RUNNING,
                             "message": data.get("message", ""),
                             "biz_type": data.get("bizType", ""),
                             "file_name": data.get("fileName", ""),

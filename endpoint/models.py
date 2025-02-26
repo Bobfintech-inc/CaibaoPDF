@@ -1,9 +1,12 @@
-# models.py
 from django.db import models
 from .managers import OrderedManager
 from django.conf import settings
 import os
 
+class TaskStatus(models.TextChoices):
+    RUNNING = 'running', 'Running'
+    ERROR = 'error', 'Error'
+    SUCCESS = 'success', 'Success'
 
 class Company(models.Model):
     code = models.CharField(max_length=255, unique=True)
@@ -30,14 +33,14 @@ class CaibaoFile(models.Model):
     objects = OrderedManager()
 
     def __str__(self):
-        return f"File {self.id}"
+        return f"File {self.id} - {self.file_path}"
 
 
 class Task(models.Model):
     task_id = models.CharField(max_length=255, unique=True)
     status = models.CharField(
         max_length=50,
-        choices=[("running", "Running"), ("error", "Error"), ("success", "Success")],
+        choices=TaskStatus.choices,
     )
     message = models.TextField()
     biz_type = models.CharField(max_length=100)

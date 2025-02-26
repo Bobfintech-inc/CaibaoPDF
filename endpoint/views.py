@@ -2,6 +2,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import transaction
 from .models import Task
 from .serializers import TaskStatusUpdateSerializer
 import logging
@@ -17,13 +18,15 @@ class TaskStatusUpdateView(APIView):
             task_data = serializer.validated_data
             logger.info(f"validated_data + {serializer.validated_data}")
             task_id = task_data["task_id"]
-            task, created = Task.objects.update_or_create(
-                task_id=task_id, defaults=task_data
-            )
+            with transaction.atomic():
+                task = Task.objects.get(task_id=task_id)
+                logger.debug(f'Updating task {task}')
+                task.status = task_data["status"]
+                task.message = task_data["message"]
 
-            if task_data["status"] == "success" and "file" in request.FILES:
-                # Save the file when the task status is 'success'
-                task.file = request.FILES["file"]
+                if task_data["status"] == "success" and "file" in request.FILES:
+                    # Save the file when the task status is 'success'
+                    task.file = request.FILES["file"]
                 task.save()
 
             task_data.pop("file", None)
