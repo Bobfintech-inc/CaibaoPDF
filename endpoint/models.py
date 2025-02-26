@@ -8,6 +8,15 @@ class TaskStatus(models.TextChoices):
     ERROR = 'error', 'Error'
     SUCCESS = 'success', 'Success'
 
+
+class OCREndpoint(models.Model):
+    url = models.URLField(max_length=1024, null=False, blank=False)
+    capacity = models.IntegerField(default=3)
+    current_load = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f'OCREndpoint cap {self.capacity} - load {self.current_load} - {self.url}'
+    
 class Company(models.Model):
     code = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
@@ -46,6 +55,7 @@ class Task(models.Model):
     biz_type = models.CharField(max_length=100)
     file_name = models.CharField(max_length=255, null=True, blank=True)
     file = models.FileField(upload_to="task_files/", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     source_file = models.ForeignKey(
         CaibaoFile,
@@ -55,6 +65,10 @@ class Task(models.Model):
         blank=True,
     )
     
+    endpoint = models.ForeignKey(
+        OCREndpoint, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    
     def save(self, *args, **kwargs):
         upload_file_folder = self.source_file.file_path.split(os.sep)[-2]
         self.file.upload_to = os.path.join("task_files", upload_file_folder)
@@ -62,3 +76,5 @@ class Task(models.Model):
 
     def __str__(self):
         return f"Task {self.task_id} - {self.status}"
+    
+

@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
-from .models import Task
+from .models import Task, OCREndpoint
 from .serializers import TaskStatusUpdateSerializer
 import logging
 
@@ -23,11 +23,13 @@ class TaskStatusUpdateView(APIView):
                 logger.debug(f'Updating task {task}')
                 task.status = task_data["status"]
                 task.message = task_data["message"]
+                task.endpoint.current_load -= 1
 
                 if task_data["status"] == "success" and "file" in request.FILES:
                     # Save the file when the task status is 'success'
                     task.file = request.FILES["file"]
                 task.save()
+                task.endpoint.save()
 
             task_data.pop("file", None)
             return Response(

@@ -1,0 +1,11 @@
+
+[
+{
+    "model": "endpoint.ocrendpoint",
+    "pk": 1,
+    "fields": {
+      "url": "http://172.16.5.161:9111/api/v1/ocr/pdf2text",
+      "capacity": "3"
+    }
+  }
+]
