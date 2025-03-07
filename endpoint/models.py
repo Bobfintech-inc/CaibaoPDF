@@ -1,7 +1,9 @@
 from django.db import models
 from .managers import OrderedManager
 from django.conf import settings
-import os
+import os, logging
+
+logger = logging.getLogger(__name__)
 
 class TaskStatus(models.TextChoices):
     RUNNING = 'running', 'Running'
@@ -45,6 +47,17 @@ class CaibaoFile(models.Model):
         return f"File {self.id} - {self.file_path}"
 
 
+def _dynamic_upload_to(task_obj, file):
+    upload_sub_paths = task_obj.source_file.file_path.split(os.sep)[-2:]
+    upload_to_path = os.path.join("task_files", *upload_sub_paths)
+    dot_index = upload_to_path.rfind('.')
+    if dot_index > -1:
+        upload_to_path = f"{upload_to_path[:dot_index]}.{settings.OCR_OUTPUT_FORMAT}"
+    else:
+        upload_to_path = f"{upload_to_path}.{settings.OCR_OUTPUT_FORMAT}"
+    logger.debug(f'upload_to_path: {upload_to_path}')
+    return upload_to_path
+
 class Task(models.Model):
     task_id = models.CharField(max_length=255, unique=True)
     status = models.CharField(
@@ -54,7 +67,7 @@ class Task(models.Model):
     message = models.TextField()
     biz_type = models.CharField(max_length=100)
     file_name = models.CharField(max_length=255, null=True, blank=True)
-    file = models.FileField(upload_to="task_files/", null=True, blank=True)
+    file = models.FileField(upload_to=_dynamic_upload_to, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     source_file = models.ForeignKey(
@@ -69,11 +82,7 @@ class Task(models.Model):
         OCREndpoint, on_delete=models.SET_NULL, null=True, blank=True
     )
     
-    def save(self, *args, **kwargs):
-        upload_file_folder = self.source_file.file_path.split(os.sep)[-2]
-        self.file.upload_to = os.path.join("task_files", upload_file_folder)
-        return super().save(*args, **kwargs)
-
+    
     def __str__(self):
         return f"Task {self.task_id} - {self.status}"
     

@@ -39,19 +39,20 @@ class CaibaoFileAdmin(admin.ModelAdmin):
 # Task admin setup with downloadable link for file (assuming Task has a file field)
 class TaskAdmin(admin.ModelAdmin):
     list_display = (
-        "task_id",
-        "status",
-        "message",
-        "biz_type",
+        # "task_id",
         "file_name",
+        "status",
+        "file_link",
+        "source_file_link", 
+        "biz_type",
         "created_at",
         "updated_at",
-        "source_file_link",
-        "file_link",  # Add the downloadable link to list_display
+        "short_message"
     )
 
-    search_fields = ("task_id", "status", "biz_type")
+    search_fields = ("status", "biz_type", "message")
     list_filter = ("status", "biz_type")
+    readonly_fields = ("source_file_link", "file_link", "file_name", "short_message")
 
     # Create a clickable download link for the file field
     def file_link(self, obj):
@@ -62,23 +63,32 @@ class TaskAdmin(admin.ModelAdmin):
         return "No file"
 
     file_link.allow_tags = True
-    file_link.short_description = "File"
+    file_link.short_description = "Target File"
 
 
     def source_file_link(self, obj):
         # Get the admin URL for the related Author object
         if obj.source_file:
-            link = reverse("admin:endpoint_caibaofile_change", args=[obj.source_file.id])
-            return format_html('<a href="{}">{}</a>', link, obj.source_file.id)
+            # link = reverse("admin:endpoint_caibaofile_change", args=[obj.source_file.id])
+            # return format_html('<a href="{}">{}</a>', link, obj.source_file.id)
+            return format_html('<a href="/{}" download>Download</a>', obj.source_file.file_path)
         return "No file"
     
     # Optional: Add a nicer column header name
-    source_file_link.short_description = 'Author'
+    file_link.allow_tags = True
+    source_file_link.short_description = 'Source File'
 
     
-    def message(self, obj):
+    def short_message(self, obj):
         if obj.message:
             return obj.message[:100]
+    short_message.short_description = 'Message'
+    
+    
+    def get_file_name(self, obj):
+        if obj.source_file:
+            return obj.source_file.file_path.split('/')[-1]
+        return "No file"
 
 admin.site.register(OCREndpoint, EndpointAdmin)
 admin.site.register(Company, CompanyAdmin)

@@ -29,7 +29,7 @@ def get_caibao_files(limit=10) -> Generator[CaibaoFile, None, None]:
 
     # Step 1: Identify the company with the higher priority and code
     highest_priority_companies = (
-        Company.objects.all().order_by("code")
+        Company.objects.all()
     )
     for highest_priority_company in highest_priority_companies:
         logger.debug(f'running for company {highest_priority_company}')
@@ -68,7 +68,7 @@ def submit_ocr_task(limit=10):
             with transaction.atomic():
                 
                 task_id = get_task_id(caibao_file.hash_digest)
-                params = {"taskId": task_id, "callback": get_call_back_url(), "async": True, "outformat": "md"}
+                params = {"taskId": task_id, "callback": get_call_back_url(), "async": True, "outformat": settings.OCR_OUTPUT_FORMAT}
                 files = {
                     "file": (
                         os.sep.join(caibao_file.file_path.split(os.sep)[-2:]),
@@ -99,7 +99,7 @@ def submit_ocr_task(limit=10):
                                     "status": TaskStatus.RUNNING,
                                     "message": data.get("message", ""),
                                     "biz_type": data.get("bizType", ""),
-                                    "file_name": data.get("fileName", ""),
+                                    "file_name": os.sep.join(caibao_file.file_path.split(os.sep)[-2:]),
                                 },
                             )
                             tasks_created.append(task)

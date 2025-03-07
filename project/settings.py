@@ -218,3 +218,6 @@ LOGGING = {
         }
     },
 }
+
+
+OCR_OUTPUT_FORMAT=os.environ.get('OCR_OUTPUT_FORMAT', 'md')
