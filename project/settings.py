@@ -38,8 +38,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'django_celery_beat',
-    'django_celery_results',
     "rest_framework",
     "endpoint",
 ]
@@ -166,7 +164,10 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': (
+                '{levelname} {asctime} {module} {process:d} '
+                '{thread:d} {message}'
+            ),
             'style': '{',
         },
         'simple': {
@@ -188,30 +189,22 @@ LOGGING = {
         },
     },
     'loggers': {
-        # Root logger
         '': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': True,
         },
-        # Django framework logger
         'django': {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,
         },
-        'celery': {  # Assuming 'myproject' is your project name
+        'endpoint': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
             'propagate': False,
         },
-        # Your account app specific logger, using the module path pattern
-        'endpoint': {  # Assuming 'myproject' is your project name
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'requests':{
+        'requests': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
             'propagate': False,
@@ -220,4 +213,4 @@ LOGGING = {
 }
 
 
-OCR_OUTPUT_FORMAT=os.environ.get('OCR_OUTPUT_FORMAT', 'md')
+OCR_OUTPUT_FORMAT = os.environ.get('OCR_OUTPUT_FORMAT', 'md')

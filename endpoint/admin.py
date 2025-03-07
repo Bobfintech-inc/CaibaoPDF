@@ -1,9 +1,7 @@
 # admin.py
 from django.contrib import admin
-from django.urls import reverse
 from django.utils.html import format_html
 from .models import OCREndpoint, Task
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from .models import Company, CaibaoFile
 
 
@@ -96,27 +94,3 @@ admin.site.register(CaibaoFile, CaibaoFileAdmin)
 admin.site.register(Task, TaskAdmin)
 
 
-
-# clear IntervalSchedule table 
-IntervalSchedule.objects.all().delete()
-# Create the interval schedule for 1.5 minutes (90 seconds)
-schedule, created = IntervalSchedule.objects.get_or_create(
-    every=30,  # Interval in seconds (90 seconds = 1.5 minutes)
-    period=IntervalSchedule.SECONDS,
-)
-
-# clear PeriodicTask table
-PeriodicTask.objects.all().delete()
-# Create a periodic task that will execute the `update_task_status` task
-PeriodicTask.objects.get_or_create(
-    interval=schedule,
-    name="Submit OCR Task, Every 1.5 Minutes",
-    task="endpoint.tasks.submit_ocr_task",
-)
-
-
-# class PeriodicTaskAdmin(admin.ModelAdmin):
-#     model = PeriodicTask
-#     list_display = ('name', 'interval', 'enabled', 'last_run_at', 'date_changed')
-
-# admin.site.register(PeriodicTask, PeriodicTaskAdmin)

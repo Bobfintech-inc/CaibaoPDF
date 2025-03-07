@@ -3,8 +3,7 @@ djangorestframework
 django-cors-headers
 SQLAlchemy
 celery
-django-celery-beat
-django_celery_results
+# django_celery_results
 requests
 filehash
 tqdm
